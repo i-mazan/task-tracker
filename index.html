@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f5f0">
+<meta name="description" content="A calm, offline-friendly task board.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>TaskFlow</title>
+<style>
+:root{--bg:#f7f5f0;--surface:#fffdf9;--text:#35413e;--muted:#84908b;--line:#e4e6df;--green:#78968d;--green-dark:#5d7d74;--today-bg:#f8e9e4;--week-bg:#e9f0e9;--later-bg:#eeeaf5;--shadow:0 8px 25px rgba(61,70,66,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,textarea{font:inherit}button{cursor:pointer} .app{min-height:100vh;display:flex}.sidebar{width:250px;padding:28px 18px;border-right:1px solid var(--line);background:rgba(255,253,249,.72);position:fixed;inset:0 auto 0 0}.brand{font-family:Georgia,serif;font-size:29px;margin:2px 12px 30px;color:#45534f}.nav{display:flex;flex-direction:column;gap:5px}.nav-btn{border:0;background:transparent;color:#68746f;text-align:left;padding:11px 12px;border-radius:10px;display:flex;align-items:center;justify-content:space-between}.nav-btn:hover{background:#f0f1eb}.nav-btn.active{background:#e6eee9;color:var(--green-dark);font-weight:650}.nav-label{display:flex;align-items:center;gap:10px}.count{font-size:11px;color:#9aa39f}.main{margin-left:250px;width:calc(100% - 250px);padding:42px clamp(25px,5vw,70px);max-width:1500px}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:25px}.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9aa39f}.title{font-family:Georgia,serif;font-size:38px;margin:4px 0 7px;font-weight:500}.subtitle{color:var(--muted);font-size:14px}.add-card{background:var(--surface);border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:var(--shadow);margin-bottom:25px}.add-row{display:flex;gap:10px}.task-input{flex:1;border:1px solid var(--line);border-radius:11px;background:#fff;padding:12px 14px;outline:none}.task-input:focus{border-color:#aabbb5;box-shadow:0 0 0 3px rgba(120,150,141,.1)}.add-btn{border:0;border-radius:11px;background:var(--green);color:#fff;padding:0 19px;font-weight:650}.quick{display:flex;gap:7px;margin-top:11px}.quick-btn{border:1px solid var(--line);background:#faf9f5;color:#75807c;padding:7px 12px;border-radius:9px;font-size:12px}.quick-btn.selected{background:#e7eee9;color:var(--green-dark);border-color:#cad8d2}.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.board[hidden]{display:none}.group{border-radius:18px;padding:17px;min-height:300px}.group.today{background:var(--today-bg)}.group.week{background:var(--week-bg)}.group.later{background:var(--later-bg)}.group.hidden{display:none}.group-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.group-title{font-family:Georgia,serif;font-size:21px}.group-count{font-size:11px;color:#87918d;background:rgba(255,255,255,.5);padding:4px 7px;border-radius:20px}.tasks{display:flex;flex-direction:column;gap:10px}.empty{color:#9aa19d;font-size:13px;padding:28px 8px;text-align:center}.task{background:rgba(255,253,249,.92);border:1px solid rgba(225,226,218,.9);border-radius:13px;padding:13px;display:flex;justify-content:space-between;gap:12px;box-shadow:0 3px 12px rgba(61,70,66,.04)}.task.dragging{opacity:.45}.task-main{min-width:0}.task-text{font-size:15px;line-height:1.4;word-break:break-word}.task-text.editing{outline:2px solid var(--green);outline-offset:3px;border-radius:6px;background:#fff;cursor:text}.task-meta{font-size:12px;color:#7c8985;margin-top:6px}.task-meta.meta-editable{cursor:pointer}.task-meta.meta-editable:hover{color:var(--green-dark);text-decoration:underline}.task-meta.meta-overdue{color:#b23b3b;font-weight:650}.date-input{font-size:12px;color:#7c8985;margin-top:6px;border:1px solid var(--line);border-radius:6px;padding:2px 6px;background:#fff;width:100%}.task-actions{display:flex;flex-direction:column;gap:6px;min-width:44px}.task-action{width:34px;height:28px;border:1px solid #dfe5e1;border-radius:9px;background:#f4f6f3;color:#64756f;font-size:13px;line-height:1}.task-action:hover{background:#e9efeb;border-color:#c9d6d1}.secondary{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:22px}.secondary-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.secondary-title{font-family:Georgia,serif;font-size:24px}.secondary-items{display:flex;flex-direction:column;gap:9px}.secondary .task{background:#fff}.restore{font-size:11px;border:1px solid var(--line);background:#f5f7f4;border-radius:8px;padding:7px 9px;color:#64756f}.delete{font-size:11px;border:0;background:transparent;color:#a28b88;padding:7px}.bucket-actions{display:flex;justify-content:flex-end;margin-bottom:14px}.bucket-actions[hidden]{display:none}.delete-all{border:1px solid #e6c9c5;background:#faf6f5;color:#a2726c;padding:8px 14px;border-radius:9px;font-size:12px;font-weight:650}.delete-all:hover{background:#f5e9e7;border-color:#e0bdb8}.brain-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px}.summary-col{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px;transition:border-color .15s,background .15s}.summary-col.drag-over{border-color:var(--green);background:#f1f6f2}.summary-title{font-family:Georgia,serif;font-size:15px;color:#526059;margin-bottom:8px;display:flex;align-items:center;gap:7px}.summary-count{font-size:11px;color:#9aa39f;background:rgba(120,150,141,.14);padding:2px 7px;border-radius:20px;font-family:Inter,sans-serif}.summary-list{display:flex;flex-direction:column;gap:5px}.summary-item{font-size:12px;color:#707c77;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.summary-empty{font-size:12px;color:#aab2ad}.brain-capture{background:var(--surface);border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:var(--shadow);margin-bottom:20px}.brain-area-inline{width:100%;min-height:110px;border:1px solid var(--line);border-radius:11px;padding:12px 14px;outline:none;resize:vertical;font-size:14px;line-height:1.6;background:#fff;margin-bottom:12px;color:var(--text)}.brain-ideas{display:flex;flex-direction:column;gap:9px}.idea{background:var(--surface);border:1px solid rgba(225,226,218,.9);border-radius:13px;padding:13px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 3px 12px rgba(61,70,66,.04);cursor:grab}.idea.dragging{opacity:.45}.idea-text{font-size:15px;line-height:1.4;word-break:break-word}.idea-clear{font-size:18px;line-height:1;padding:4px 10px}.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#4f5f5a;color:#fff;padding:10px 15px;border-radius:10px;font-size:12px;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}@media(max-width:900px){.sidebar{width:205px}.main{margin-left:205px;width:calc(100% - 205px)}.board{grid-template-columns:1fr}.group.hidden{display:none}.brain-summary{grid-template-columns:1fr}}@media(max-width:650px){.sidebar{position:static;width:100%;height:auto;border-right:0;border-bottom:1px solid var(--line)}.app{display:block}.main{margin-left:0;width:100%;padding:25px 16px}.sidebar{padding:15px}.nav{display:grid;grid-template-columns:repeat(2,1fr)}.brand{margin-bottom:14px}.add-row{flex-direction:column}.add-btn{height:42px}.title{font-size:32px}}
+
+.backup-card{background:var(--surface);border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:var(--shadow);margin-top:24px}.backup-card h2{font:500 23px Georgia,serif;margin:0 0 8px}.backup-card p{font-size:13px;color:var(--muted);line-height:1.6}.backup-actions{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 5px}.backup-button{border:1px solid #cad8d2;background:#e7eee9;color:var(--green-dark);border-radius:10px;padding:10px 14px;font-weight:600;font-size:13px}.backup-button.secondary-action{background:#faf9f5;border-color:var(--line);color:#68746f}.backup-status{font-size:12px;color:#68746f;margin-top:8px}.nav-btn:focus-visible,.backup-button:focus-visible{outline:3px solid #78968d;outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">TaskFlow</div>
+  <nav class="nav" id="sidebarNav">
+    <button class="nav-btn active" data-view="all"><span class="nav-label">☷ <span>All tasks</span></span><span class="count" id="allCount">0</span></button>
+    <button class="nav-btn" data-view="today"><span class="nav-label">○ <span>Today</span></span><span class="count" id="todayCountSide">0</span></button>
+    <button class="nav-btn" data-view="week"><span class="nav-label">◷ <span>This week</span></span><span class="count" id="weekCountSide">0</span></button>
+    <button class="nav-btn" data-view="later"><span class="nav-label">□ <span>Later</span></span><span class="count" id="laterCountSide">0</span></button>
+    <button class="nav-btn" data-view="completed"><span class="nav-label">✓ <span>Completed</span></span><span class="count" id="completedCount">0</span></button>
+    <button class="nav-btn" data-view="bucket"><span class="nav-label">× <span>Bucket</span></span><span class="count" id="bucketCount">0</span></button>
+    <button class="nav-btn" data-view="brain"><span class="nav-label">✎ <span>Brain dump</span></span></button>
+  </nav>
+</aside>
+<main class="main">
+  <header class="header"><div><div class="eyebrow" id="eyebrow">Overview</div><h1 class="title" id="pageTitle">🌸 All tasks</h1><div class="subtitle" id="pageSubtitle">Capture tasks, then move them between Today, This week and Later.</div></div></header>
+  <section class="add-card" id="addCard">
+    <div class="add-row"><input id="taskInput" class="task-input" placeholder="What needs to be done?" autocomplete="off"><button class="add-btn" id="addBtn">Add task</button></div>
+    <div class="quick" id="quick"><button class="quick-btn" data-deadline="today">Today</button><button class="quick-btn" data-deadline="week">This week</button><button class="quick-btn selected" data-deadline="later">Later</button></div>
+  </section>
+  <section class="board" id="board">
+    <section class="group today" data-bucket="today" id="todayGroup"><div class="group-head"><div class="group-title">Today</div><div class="group-count" id="todayCount">0</div></div><div class="tasks" id="todayTasks"></div></section>
+    <section class="group week" data-bucket="week" id="weekGroup"><div class="group-head"><div class="group-title">This week</div><div class="group-count" id="weekCount">0</div></div><div class="tasks" id="weekTasks"></div></section>
+    <section class="group later" data-bucket="later" id="laterGroup"><div class="group-head"><div class="group-title">Later</div><div class="group-count" id="laterCount">0</div></div><div class="tasks" id="laterTasks"></div></section>
+  </section>
+  <div class="bucket-actions" id="bucketActions" hidden><button class="delete-all" id="deleteAllBucketBtn">Delete all</button></div>
+  <section class="board" id="bucketBoard" hidden>
+    <section class="group today" data-bucket="today" id="bucketTodayGroup"><div class="group-head"><div class="group-title">Today</div><div class="group-count" id="bucketTodayCount">0</div></div><div class="tasks" id="bucketTodayTasks"></div></section>
+    <section class="group week" data-bucket="week" id="bucketWeekGroup"><div class="group-head"><div class="group-title">This week</div><div class="group-count" id="bucketWeekCount">0</div></div><div class="tasks" id="bucketWeekTasks"></div></section>
+    <section class="group later" data-bucket="later" id="bucketLaterGroup"><div class="group-head"><div class="group-title">Later</div><div class="group-count" id="bucketLaterCount">0</div></div><div class="tasks" id="bucketLaterTasks"></div></section>
+  </section>
+  <section class="secondary" id="secondary" hidden><div class="secondary-head"><div class="secondary-title" id="secondaryTitle"></div><button class="delete-all" id="clearAllCompletedBtn">Clear all</button></div><div class="secondary-items" id="secondaryItems"></div></section>
+  <section id="brainView" hidden>
+    <div class="brain-summary" id="brainSummary">
+      <div class="summary-col" data-bucket="today" id="summaryColToday"><div class="summary-title">Today <span class="summary-count" id="summaryTodayCount">0</span></div><div class="summary-list" id="summaryToday"></div></div>
+      <div class="summary-col" data-bucket="week" id="summaryColWeek"><div class="summary-title">This week <span class="summary-count" id="summaryWeekCount">0</span></div><div class="summary-list" id="summaryWeek"></div></div>
+      <div class="summary-col" data-bucket="later" id="summaryColLater"><div class="summary-title">Later <span class="summary-count" id="summaryLaterCount">0</span></div><div class="summary-list" id="summaryLater"></div></div>
+    </div>
+    <div class="brain-capture">
+      <textarea id="brainArea" class="brain-area-inline" placeholder="One idea per line..."></textarea>
+      <button class="add-btn" id="brainAddBtn">Add to Brain dump</button>
+    </div>
+    <div class="bucket-actions"><button class="delete-all" id="clearAllIdeasBtn">Clear all</button></div>
+    <div class="brain-ideas" id="brainIdeas"></div>
+  </section>
+  <section class="backup-card" id="backupCard" aria-labelledby="backupTitle">
+    <h2 id="backupTitle">Your data</h2>
+    <p>Tasks and Brain dump ideas are saved automatically on this device. Download a backup to keep a copy or move them to another browser or device.</p>
+    <div class="backup-actions"><button class="backup-button" id="exportBackup" type="button">Download backup</button><button class="backup-button secondary-action" id="importBackup" type="button">Import backup</button><input id="backupFile" type="file" accept=".json,application/json" hidden></div>
+    <div class="backup-status" id="backupStatus" role="status" aria-live="polite">Backups include active, completed and bucketed tasks, plus Brain dump ideas.</div>
+  </section>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+const STORAGE_KEY='taskflow.tasks.v3';
+const LEGACY_KEYS=['taskflow.tasks.v2','taskflow.tasks','tasks','taskFlowTasks'];
+const IDEAS_KEY='taskflow.ideas.v1';
+let tasks=[]; let ideas=[]; let currentView='all'; let selectedDeadline='later';
+const $=id=>document.getElementById(id);
+function pad(n){return String(n).padStart(2,'0')}
+function dateKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function startDay(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function weekEnd(d){const x=startDay(d); const day=x.getDay(); const days=day===0?6:7-day; return addDays(x,days)}
+function parseDate(s){if(!s)return null; const p=s.split('-').map(Number); if(p.length!==3||p.some(Number.isNaN))return null; return new Date(p[0],p[1]-1,p[2])}
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks))}catch(e){console.warn('Could not save tasks',e);storageWarning()}}
+function normalize(raw){if(!Array.isArray(raw))return []; return raw.map((t,i)=>{const date=t.date||t.deadline||null;return{id:String(t.id||Date.now()+'-'+i+'-'+Math.random().toString(36).slice(2)),text:String(t.text??t.title??t.name??'').trim(),date,category:t.category||(date?dateBucketOf({date}):'later'),completed:!!t.completed,bucketed:!!t.bucketed,completedAt:t.completedAt||null,assignedAt:t.assignedAt||Date.now()}}).filter(t=>t.text)}
+function load(){
+  let raw=null;
+  try{raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch(e){}
+  if(!raw){for(const key of LEGACY_KEYS){try{const candidate=JSON.parse(localStorage.getItem(key)||'null');if(Array.isArray(candidate)){raw=candidate;break}}catch(e){}}}
+  tasks=normalize(raw);
+  save();
+}
+function saveIdeas(){try{localStorage.setItem(IDEAS_KEY,JSON.stringify(ideas))}catch(e){console.warn('Could not save ideas',e);storageWarning()}}
+function normalizeIdeas(raw){if(!Array.isArray(raw))return []; return raw.map((i,idx)=>({id:String(i.id||Date.now()+'-'+idx+'-'+Math.random().toString(36).slice(2)),text:String(i.text??'').trim()})).filter(i=>i.text)}
+function loadIdeas(){let raw=null;try{raw=JSON.parse(localStorage.getItem(IDEAS_KEY)||'null')}catch(e){} ideas=normalizeIdeas(raw); saveIdeas()}
+function dateBucketOf(t){
+  if(!t.date)return 'later';
+  const today=startDay(new Date()), due=parseDate(t.date); if(!due)return 'later';
+  if(due.getTime()===today.getTime())return 'today';
+  const end=weekEnd(today);
+  if(due>today&&due<=end)return 'week';
+  if(due<today){return due>=startDay(addDays(end,-6))?'week':'later'}
+  return 'later';
+}
+function getBucket(t){
+  if(t.completed)return 'completed'; if(t.bucketed)return 'bucket'; return t.category||'later';
+}
+function computeBuckets(){const b={today:[],week:[],later:[]};tasks.filter(t=>!t.completed&&!t.bucketed).forEach(t=>b[getBucket(t)].push(t));return b}
+function isBucketOverdue(t){if(t.completed||t.bucketed||t.date||!t.assignedAt)return false;const today=startDay(new Date());if(t.category==='today')return startDay(new Date(t.assignedAt))<today;if(t.category==='week')return weekEnd(startDay(new Date(t.assignedAt)))<today;return false}
+function dueLabel(t){if(!t.date)return isBucketOverdue(t)?'OVERDUE':'No deadline';const d=parseDate(t.date), today=startDay(new Date()); if(!d)return ''; const diff=Math.round((d-today)/86400000); if(diff<0)return 'Overdue · '+t.date; if(diff===0)return 'Due today'; return 'Due · '+t.date}
+function completedLabel(t){if(!t.completedAt)return 'Completed'; return 'Completed · '+new Date(t.completedAt).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}
+function makeTask(t,mode){
+ const draggable=mode==='board'||mode==='bucket';
+ const el=document.createElement('article'); el.className='task'; el.draggable=draggable; el.dataset.id=t.id;
+ if(draggable){el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',t.id);el.classList.add('dragging')});el.addEventListener('dragend',()=>el.classList.remove('dragging'))}
+ const main=document.createElement('div');main.className='task-main';const text=document.createElement('div');text.className='task-text';text.textContent=t.text;
+ el.addEventListener('dblclick',e=>{if(e.target.closest('.task-actions')||e.target.closest('.meta-editable'))return;e.stopPropagation();el.draggable=false;text.contentEditable='true';text.classList.add('editing');text.focus();const range=document.createRange();range.selectNodeContents(text);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)});
+ text.addEventListener('keydown',e=>{if(!text.isContentEditable)return;if(e.key==='Enter'){e.preventDefault();text.blur()}else if(e.key==='Escape'){e.preventDefault();text.textContent=t.text;text.blur()}});
+ text.addEventListener('blur',()=>{if(text.contentEditable!=='true')return;text.contentEditable='false';text.classList.remove('editing');el.draggable=draggable;const newText=text.textContent.trim();if(newText&&newText!==t.text){t.text=newText;save();render()}else{text.textContent=t.text}});
+ const meta=document.createElement('div');meta.className='task-meta';const metaLabel=mode==='board'?dueLabel(t):mode==='completed'?completedLabel(t):'In Bucket';meta.textContent=metaLabel;if(mode==='board'&&(metaLabel==='OVERDUE'||metaLabel.indexOf('Overdue')===0))meta.classList.add('meta-overdue');
+ if(mode==='board'){meta.classList.add('meta-editable');meta.title='Click to set a specific deadline date';meta.addEventListener('click',ev=>{ev.stopPropagation();const input=document.createElement('input');input.type='date';input.className='date-input';input.value=t.date||'';meta.replaceWith(input);input.focus();if(input.showPicker){try{input.showPicker()}catch(err){}}const commit=()=>{t.date=input.value||null;save();render()};input.addEventListener('change',commit);input.addEventListener('blur',commit)})}
+ main.append(text,meta);
+ const actions=document.createElement('div');actions.className='task-actions';
+ if(mode==='board'){const c=document.createElement('button');c.className='task-action complete';c.textContent='✓';c.title='Complete';c.setAttribute('aria-label','Complete task');c.onclick=()=>{t.completed=true;t.completedAt=Date.now();save();render();toast('Task completed')};const x=document.createElement('button');x.className='task-action cancel';x.textContent='×';x.title='Move to Bucket';x.setAttribute('aria-label','Move to Bucket');x.onclick=()=>{t.bucketed=true;t.completed=false;t.completedAt=null;save();render();toast('Moved to Bucket')};actions.append(c,x)}
+ else {const r=document.createElement('button');r.className='restore';r.textContent='Restore';r.onclick=()=>{t.completed=false;t.bucketed=false;t.completedAt=null;t.assignedAt=Date.now();save();render();toast('Task restored')};const d=document.createElement('button');d.className='delete';d.textContent='Delete';d.onclick=()=>{tasks=tasks.filter(x=>x.id!==t.id);save();render()};actions.append(r,d)}
+ el.append(main,actions);return el;
+}
+function renderGroup(id,arr,countId,mode,emptyText){const box=$(id);box.innerHTML='';$(countId).textContent=arr.length;if(!arr.length){const e=document.createElement('div');e.className='empty';e.textContent=emptyText||'Nothing here yet';box.appendChild(e)}else arr.forEach(t=>box.appendChild(makeTask(t,mode)))}
+function updateCounts(b){$('allCount').textContent=tasks.filter(t=>!t.completed&&!t.bucketed).length;$('todayCountSide').textContent=b.today.length;$('weekCountSide').textContent=b.week.length;$('laterCountSide').textContent=b.later.length;$('completedCount').textContent=tasks.filter(t=>t.completed).length;$('bucketCount').textContent=tasks.filter(t=>t.bucketed&&!t.completed).length}
+function renderSecondary(){const list=tasks.filter(t=>t.completed);$('secondaryTitle').textContent='Completed';$('secondaryItems').innerHTML='';if(!list.length){const e=document.createElement('div');e.className='empty';e.textContent='No completed tasks yet';$('secondaryItems').appendChild(e)}else list.forEach(t=>$('secondaryItems').appendChild(makeTask(t,'completed')))}
+function renderBucketBoard(){const list=tasks.filter(t=>t.bucketed&&!t.completed);const b={today:[],week:[],later:[]};list.forEach(t=>b[t.category||'later'].push(t));renderGroup('bucketTodayTasks',b.today,'bucketTodayCount','bucket');renderGroup('bucketWeekTasks',b.week,'bucketWeekCount','bucket');renderGroup('bucketLaterTasks',b.later,'bucketLaterCount','bucket')}
+function renderSummaryList(listId,countId,arr){const box=$(listId);box.innerHTML='';$(countId).textContent=arr.length;if(!arr.length){const e=document.createElement('div');e.className='summary-empty';e.textContent='Nothing here';box.appendChild(e)}else arr.forEach(t=>{const row=document.createElement('div');row.className='summary-item';row.textContent=t.text;box.appendChild(row)})}
+function renderBrainSummary(){const b=computeBuckets();renderSummaryList('summaryToday','summaryTodayCount',b.today);renderSummaryList('summaryWeek','summaryWeekCount',b.week);renderSummaryList('summaryLater','summaryLaterCount',b.later)}
+function renderBrainIdeas(){const box=$('brainIdeas');box.innerHTML='';if(!ideas.length){const e=document.createElement('div');e.className='empty';e.textContent='Nothing captured yet';box.appendChild(e);return}ideas.forEach(idea=>{const el=document.createElement('article');el.className='idea';el.draggable=true;el.dataset.id=idea.id;el.addEventListener('dragstart',e=>{e.dataTransfer.setData('application/x-idea',idea.id);el.classList.add('dragging')});el.addEventListener('dragend',()=>el.classList.remove('dragging'));const text=document.createElement('div');text.className='idea-text';text.textContent=idea.text;const clear=document.createElement('button');clear.className='delete idea-clear';clear.textContent='×';clear.title='Clear';clear.setAttribute('aria-label','Clear idea');clear.onclick=()=>{ideas=ideas.filter(x=>x.id!==idea.id);saveIdeas();renderBrainIdeas()};el.append(text,clear);box.appendChild(el)})}
+function promoteIdea(ideaId,category){const idea=ideas.find(i=>i.id===ideaId);if(!idea)return;tasks.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),text:idea.text,date:null,category,completed:false,bucketed:false,completedAt:null,assignedAt:Date.now()});ideas=ideas.filter(i=>i.id!==ideaId);save();saveIdeas();render();toast('Idea moved to '+(category==='today'?'Today':category==='week'?'This week':'Later'))}
+function renderBrain(){renderBrainSummary();renderBrainIdeas()}
+function addIdeas(){const area=$('brainArea');const lines=area.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!lines.length)return;lines.forEach(text=>ideas.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),text}));saveIdeas();area.value='';renderBrainIdeas();toast(lines.length+' idea'+(lines.length===1?'':'s')+' added')}
+function showView(view){currentView=view;document.querySelectorAll('.nav-btn[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));const single={today:'todayGroup',week:'weekGroup',later:'laterGroup'};const isBoard=view==='all'||!!single[view];const isBucket=view==='bucket';const isCompleted=view==='completed';const isBrain=view==='brain';$('backupCard').hidden=view!=='all';$('addCard').hidden=view!=='all';$('board').hidden=!isBoard;$('bucketBoard').hidden=!isBucket;$('bucketActions').hidden=!isBucket;$('secondary').hidden=!isCompleted;$('brainView').hidden=!isBrain;if(isBoard){['todayGroup','weekGroup','laterGroup'].forEach(id=>$(id).classList.toggle('hidden',view!=='all'&&id!==single[view]));$('pageTitle').textContent=view==='all'?'🌸 All tasks':view==='today'?'Today':view==='week'?'This week':'Later';$('eyebrow').textContent=view==='all'?'Overview':'Tasks';$('pageSubtitle').textContent=view==='all'?'Capture tasks, then move them between Today, This week and Later.':'Tasks in this view.'}else if(isBucket){$('pageTitle').textContent='Bucket';$('eyebrow').textContent='Lists';$('pageSubtitle').textContent='Tasks you decided not to keep active. Drag into a column or use Restore to bring one back.';renderBucketBoard()}else if(isBrain){$('pageTitle').textContent='Brain dump';$('eyebrow').textContent='Capture';$('pageSubtitle').textContent='Dump every idea — nothing is removed until you clear it.';renderBrain()}else{$('pageTitle').textContent='Completed';$('eyebrow').textContent='Lists';$('pageSubtitle').textContent='Everything you have completed.';renderSecondary()} }
+function render(){const b=computeBuckets();renderGroup('todayTasks',b.today,'todayCount','board','A clear day ahead.');renderGroup('weekTasks',b.week,'weekCount','board','Plenty of room this week.');renderGroup('laterTasks',b.later,'laterCount','board','Nothing waiting in the wings yet.');updateCounts(b);showView(currentView)}
+function addTask(){const input=$('taskInput');const text=input.value.trim();if(!text)return;tasks.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),text,date:null,category:selectedDeadline,completed:false,bucketed:false,completedAt:null,assignedAt:Date.now()});save();input.value='';render();toast('Task added')}
+function setDeadlineButtons(){document.querySelectorAll('.quick-btn').forEach(b=>b.classList.toggle('selected',b.dataset.deadline===selectedDeadline))}
+function dropTo(group,id){const t=tasks.find(x=>x.id===id);if(!t)return;t.completed=false;t.bucketed=false;t.completedAt=null;t.category=group;t.assignedAt=Date.now();save();render();toast('Task moved')}
+function clearAllCompleted(){const count=tasks.filter(t=>t.completed).length;if(!count)return;if(!confirm('Clear all '+count+' completed task'+(count===1?'':'s')+'? This cannot be undone.'))return;tasks=tasks.filter(t=>!t.completed);save();render();toast('Completed cleared')}
+function clearAllIdeas(){const count=ideas.length;if(!count)return;if(!confirm('Clear all '+count+' idea'+(count===1?'':'s')+' in Brain dump? This cannot be undone.'))return;ideas=[];saveIdeas();renderBrainIdeas();toast('Brain dump cleared')}
+function deleteAllBucketed(){const count=tasks.filter(t=>t.bucketed&&!t.completed).length;if(!count)return;if(!confirm('Delete all '+count+' task'+(count===1?'':'s')+' in Bucket? This cannot be undone.'))return;tasks=tasks.filter(t=>!(t.bucketed&&!t.completed));save();render();toast('Bucket cleared')}
+function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove('show'),1500)}
+$('sidebarNav').addEventListener('click',e=>{const b=e.target.closest('button[data-view]');if(b){e.preventDefault();showView(b.dataset.view)}});
+$('addBtn').addEventListener('click',addTask);$('taskInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addTask()}});
+document.querySelectorAll('.quick-btn').forEach(b=>b.addEventListener('click',()=>{selectedDeadline=b.dataset.deadline;setDeadlineButtons()}));
+['todayGroup','weekGroup','laterGroup','bucketTodayGroup','bucketWeekGroup','bucketLaterGroup'].forEach(id=>{const g=$(id);g.addEventListener('dragover',e=>{e.preventDefault()});g.addEventListener('drop',e=>{e.preventDefault();dropTo(g.dataset.bucket,e.dataTransfer.getData('text/plain'))})});
+['summaryColToday','summaryColWeek','summaryColLater'].forEach(id=>{const g=$(id);g.addEventListener('dragover',e=>{e.preventDefault();g.classList.add('drag-over')});g.addEventListener('dragleave',()=>g.classList.remove('drag-over'));g.addEventListener('drop',e=>{e.preventDefault();g.classList.remove('drag-over');const ideaId=e.dataTransfer.getData('application/x-idea');if(ideaId)promoteIdea(ideaId,g.dataset.bucket)})});
+$('brainAddBtn').addEventListener('click',addIdeas);
+$('brainArea').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addIdeas()}});
+$('deleteAllBucketBtn').addEventListener('click',deleteAllBucketed);
+$('clearAllIdeasBtn').addEventListener('click',clearAllIdeas);
+$('clearAllCompletedBtn').addEventListener('click',clearAllCompleted);
+load();loadIdeas();render();
+})();
+</script>
+</body>
+</html>
