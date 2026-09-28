@@ -144,11 +144,25 @@ function attachDrag(el,getId,dropFn,groupSelector,excludeSelector,isBlocked){
  el.addEventListener('pointerup',finish);
  el.addEventListener('pointercancel',finish);
 }
+function attachDoubleTapEdit(el,text,excludeSelector,startEdit){
+ let tapStartX=0,tapStartY=0,lastTapTime=0,lastTapX=0,lastTapY=0;
+ el.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;tapStartX=e.clientX;tapStartY=e.clientY});
+ el.addEventListener('pointerup',e=>{
+  if(e.pointerType!=='touch'||text.isContentEditable)return;
+  if(excludeSelector&&e.target.closest(excludeSelector))return;
+  if(Math.hypot(e.clientX-tapStartX,e.clientY-tapStartY)>10)return;
+  const now=Date.now();
+  if(now-lastTapTime<350&&Math.hypot(e.clientX-lastTapX,e.clientY-lastTapY)<30){lastTapTime=0;startEdit()}
+  else{lastTapTime=now;lastTapX=e.clientX;lastTapY=e.clientY}
+ });
+}
 function makeTask(t,mode){
  const draggable=mode==='board'||mode==='bucket';
  const el=document.createElement('article'); el.className='task'; el.dataset.id=t.id;
  const main=document.createElement('div');main.className='task-main';const text=document.createElement('div');text.className='task-text';text.textContent=t.text;
- el.addEventListener('dblclick',e=>{if(e.target.closest('.task-actions')||e.target.closest('.task-date-btn'))return;e.stopPropagation();text.contentEditable='true';text.classList.add('editing');text.focus();const range=document.createRange();range.selectNodeContents(text);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)});
+ function startEditing(){text.contentEditable='true';text.classList.add('editing');text.focus();const range=document.createRange();range.selectNodeContents(text);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}
+ el.addEventListener('dblclick',e=>{if(e.target.closest('.task-actions')||e.target.closest('.task-date-btn'))return;e.stopPropagation();startEditing()});
+ attachDoubleTapEdit(el,text,'.task-actions,.task-date-btn',startEditing);
  text.addEventListener('keydown',e=>{if(!text.isContentEditable)return;if(e.key==='Enter'){e.preventDefault();text.blur()}else if(e.key==='Escape'){e.preventDefault();text.textContent=t.text;text.blur()}});
  text.addEventListener('blur',()=>{if(text.contentEditable!=='true')return;text.contentEditable='false';text.classList.remove('editing');const newText=text.textContent.trim();if(newText&&newText!==t.text){t.text=newText;save();render()}else{text.textContent=t.text}});
  const metaRow=document.createElement('div');metaRow.className='meta-row';
