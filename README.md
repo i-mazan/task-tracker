@@ -2,18 +2,19 @@
 
 A standalone, offline-friendly task board with browser-local storage and JSON backup/restore.
 
-## Install
+## Using the board
 
-1. Upload **all files and folders** in this ZIP to an HTTPS static host, such as GitHub Pages or Netlify. Keep the directory structure intact.
-2. Open the hosted `index.html` in Chrome, Edge or Safari. Use the browser's **Install app** or **Add to Home Screen** option (availability varies by browser/platform).
-3. Visit once online; the service worker then caches the app for offline use. Test offline mode after the first successful visit.
-
-For local development, run `python -m http.server 8000` inside this folder and visit `http://localhost:8000`. Opening `index.html` via `file://` does not enable service workers/PWA installation.
+- **Add a task**: type in the input at the top of **All tasks**, pick Today / This week / Later, then press **Add task**.
+- **Edit a task**: double-click anywhere on a task's card (not just its text) to make the text editable. Press **Enter** or click away to save, **Esc** to cancel.
+- **Set a specific deadline**: click the small 📅 icon on a task to open a date picker.
+- **Complete or bucket a task**: use the ✓ (complete) or × (move to Bucket) buttons on the card.
+- **Move a task between Today / This week / Later**:
+  - **Desktop**: click and drag a card into another column.
+  - **Mobile**: press and hold a card briefly (about a third of a second) until it lifts, then drag it into another column. A quick tap without holding opens it for editing instead, and a normal swipe still scrolls the page.
+- **Brain dump**: capture loose ideas one per line, then drag (press-and-hold-drag on mobile) an idea onto the Today / This week / Later summary column to turn it into a task.
 
 ## Backups and migration
 
-On **All tasks**, select **Download backup** to save tasks and Brain dump ideas as a JSON file. Select **Import backup** to restore it. Import **replaces** existing tasks and ideas after confirmation. Download a backup first if you need the current data.
-
-To transfer data from a previous standalone HTML version, open the old HTML file in its original browser/location, export its browser storage with the browser developer console (or use an HTML version with the backup feature), then import into the hosted PWA. Storage from an unrelated `file://` URL cannot be accessed automatically by the hosted PWA.
+The **Export** and **Import** buttons live at the bottom of the sidebar, under the navigation — always available, not tied to any single page. **Export** downloads tasks and Brain dump ideas as a JSON file. **Import** restores from that file and **replaces** existing tasks and ideas after a confirmation prompt. Download a backup first if you need to keep the current data.
 
 The browser stores data locally via `localStorage`; no account, cloud sync or automatic external backup is provided. Clearing site data or switching devices can lose data unless you exported a backup.
