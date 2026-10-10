@@ -75,3 +75,11 @@ test('old caches upgrade without losing queued operations',()=>{
  const storage=setup();storage.setItem('taskflow.account.v1.a',JSON.stringify({rows:{},queue:[{id:'old',changes:[]}],migrated:true}));
  const a=new Store(storage,'a');assert.deepEqual(a.state.cleanup,[]);assert.equal(a.state.queue[0].id,'old');
 });
+test('reordered positions survive offline reload and server acknowledgement',()=>{
+ const storage=setup(),a=new Store(storage,'a');
+ a.merge([row(1),{...row(1,'two'),id:'t2',payload:{id:'t2',text:'two'},position:1}]);
+ a.capture({tasks:[{id:'t2',text:'two'},{id:'t1',text:'one'}],ideas:[]});
+ const reload=new Store(storage,'a');assert.deepEqual(reload.board().tasks.map(item=>item.id),['t2','t1']);
+ const batch=reload.state.queue[0];reload.acknowledge(batch.id,batch.changes.map(change=>({...change,version:change.base+1})));
+ assert.deepEqual(new Store(storage,'a').board().tasks.map(item=>item.id),['t2','t1']);
+});

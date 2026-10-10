@@ -28,13 +28,23 @@ function isBucketOverdue(t){if(t.completed||t.bucketed||t.date||!t.assignedAt)re
 function dueLabel(t){if(!t.date)return isBucketOverdue(t)?'OVERDUE':'No deadline';const d=parseDate(t.date), today=startDay(new Date()); if(!d)return ''; const diff=Math.round((d-today)/86400000); if(diff<0)return 'Overdue · '+t.date; if(diff===0)return 'Due today'; return 'Due · '+t.date}
 function completedLabel(t){if(!t.completedAt)return 'Completed'; return 'Completed · '+new Date(t.completedAt).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}
 function attachDrag(el,getId,dropFn,groupSelector,excludeSelector,isBlocked){
- let pointerId=null,armed=false,startX=0,startY=0,holdTimer=null,currentTarget=null,ghost=null,offX=0,offY=0;
+ let pointerId=null,armed=false,startX=0,startY=0,holdTimer=null,currentTarget=null,beforeId=null,marker=null,ghost=null,offX=0,offY=0;
  const THRESHOLD=6;
  function clearHold(){if(holdTimer){clearTimeout(holdTimer);holdTimer=null}}
  function arm(){armed=true;el.setPointerCapture(pointerId);el.classList.add('dragging');const r=el.getBoundingClientRect();offX=startX-r.left;offY=startY-r.top;ghost=el.cloneNode(true);ghost.classList.add('drag-ghost');ghost.style.width=r.width+'px';ghost.style.left=(startX-offX)+'px';ghost.style.top=(startY-offY)+'px';document.body.appendChild(ghost)}
  function moveGhost(x,y){if(!ghost)return;ghost.style.left=(x-offX)+'px';ghost.style.top=(y-offY)+'px'}
- function updateTarget(x,y){const under=document.elementFromPoint(x,y);const grp=under&&under.closest?under.closest(groupSelector):null;if(grp!==currentTarget){if(currentTarget)currentTarget.classList.remove('drag-over');currentTarget=grp;if(currentTarget)currentTarget.classList.add('drag-over')}}
- function cleanup(){if(currentTarget)currentTarget.classList.remove('drag-over');if(ghost){ghost.remove();ghost=null}el.classList.remove('dragging');armed=false;currentTarget=null;clearHold()}
+ function updateTarget(x,y){
+  const under=document.elementFromPoint(x,y);
+  const grp=under?.closest(groupSelector) || null;
+  if(marker)marker.classList.remove('drop-before','drop-after');marker=null;beforeId=null;
+  if(grp!==currentTarget){if(currentTarget)currentTarget.classList.remove('drag-over');currentTarget=grp;if(grp)grp.classList.add('drag-over')}
+  if(!grp)return;
+  const cards=[...grp.querySelectorAll('.task,.idea')].filter(card=>card!==el && !card.classList.contains('drag-ghost'));
+  const next=cards.find(card=>{const rect=card.getBoundingClientRect();return y<rect.top+rect.height/2});
+  if(next){beforeId=next.dataset.id;marker=next;marker.classList.add('drop-before')}
+  else if(cards.length){marker=cards.at(-1);marker.classList.add('drop-after')}
+ }
+ function cleanup(){if(marker)marker.classList.remove('drop-before','drop-after');marker=null;if(currentTarget)currentTarget.classList.remove('drag-over');if(ghost){ghost.remove();ghost=null}el.classList.remove('dragging');armed=false;currentTarget=null;beforeId=null;clearHold()}
  el.addEventListener('pointerdown',e=>{
   if(isBlocked&&isBlocked())return;
   if(excludeSelector&&e.target.closest(excludeSelector))return;
@@ -54,12 +64,13 @@ function attachDrag(el,getId,dropFn,groupSelector,excludeSelector,isBlocked){
  });
  function finish(e){
   if(pointerId===null||e.pointerId!==pointerId)return;
-  const wasArmed=armed,target=currentTarget,id=getId();
+  const wasArmed=armed,target=currentTarget,id=getId(),before=beforeId;
   cleanup();pointerId=null;
-  if(wasArmed&&target)dropFn(id,target.dataset.bucket)
+  if(wasArmed&&target)dropFn(id,target.dataset.bucket,before,target)
  }
  el.addEventListener('pointerup',finish);
- el.addEventListener('pointercancel',finish);
+ el.addEventListener('pointercancel',()=>{cleanup();pointerId=null});
+ el.addEventListener('lostpointercapture',()=>{if(pointerId!==null){cleanup();pointerId=null}});
 }
 function attachDoubleTapEdit(el,text,excludeSelector,startEdit){
  let tapStartX=0,tapStartY=0,lastTapTime=0,lastTapX=0,lastTapY=0;
@@ -74,7 +85,6 @@ function attachDoubleTapEdit(el,text,excludeSelector,startEdit){
  });
 }
 function makeTask(t,mode){
- const draggable=mode==='board'||mode==='bucket';
  const el=document.createElement('article'); el.className='task'; el.dataset.id=t.id;
  const main=document.createElement('div');main.className='task-main';const text=document.createElement('div');text.className='task-text';text.textContent=t.text;
  function startEditing(){text.contentEditable='true';text.classList.add('editing');text.focus();const range=document.createRange();range.selectNodeContents(text);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}
@@ -91,7 +101,7 @@ function makeTask(t,mode){
  if(mode==='board'){const c=document.createElement('button');c.className='task-action complete';c.textContent='✓';c.title='Complete';c.setAttribute('aria-label','Complete task');c.onclick=()=>{t.completed=true;t.completedAt=Date.now();save();render();toast('Task completed')};const x=document.createElement('button');x.className='task-action cancel';x.textContent='×';x.title='Move to Bucket';x.setAttribute('aria-label','Move to Bucket');x.onclick=()=>{t.bucketed=true;t.completed=false;t.completedAt=null;save();render();toast('Moved to Bucket')};actions.append(c,x)}
  else {const r=document.createElement('button');r.className='restore';r.textContent='Restore';r.onclick=()=>{t.completed=false;t.bucketed=false;t.completedAt=null;t.assignedAt=Date.now();save();render();toast('Task restored')};const d=document.createElement('button');d.className='delete';d.textContent='Delete';d.onclick=()=>{tasks=tasks.filter(x=>x.id!==t.id);save();render()};actions.append(r,d)}
  el.append(main,actions);
- if(draggable)attachDrag(el,()=>t.id,(id,bucket)=>dropTo(bucket,id),'.group','.task-actions,.task-date-btn',()=>text.isContentEditable);
+ attachDrag(el,()=>t.id,(id,bucket,before,target)=>dropTo(bucket,id,before,target),'.group,.secondary-items','.task-actions,.task-date-btn',()=>text.isContentEditable);
  return el;
 }
 function renderGroup(id,arr,countId,mode,emptyText){const box=$(id);box.innerHTML='';$(countId).textContent=arr.length;if(!arr.length){const e=document.createElement('div');e.className='empty';e.textContent=emptyText||'Nothing here yet';box.appendChild(e)}else arr.forEach(t=>box.appendChild(makeTask(t,mode)))}
@@ -100,7 +110,7 @@ function renderSecondary(){const list=tasks.filter(t=>t.completed);$('secondaryT
 function renderBucketBoard(){const list=tasks.filter(t=>t.bucketed&&!t.completed);const b={today:[],week:[],later:[]};list.forEach(t=>b[t.category||'later'].push(t));renderGroup('bucketTodayTasks',b.today,'bucketTodayCount','bucket');renderGroup('bucketWeekTasks',b.week,'bucketWeekCount','bucket');renderGroup('bucketLaterTasks',b.later,'bucketLaterCount','bucket')}
 function renderSummaryList(listId,countId,arr){const box=$(listId);box.innerHTML='';$(countId).textContent=arr.length;if(!arr.length){const e=document.createElement('div');e.className='summary-empty';e.textContent='Nothing here';box.appendChild(e)}else arr.forEach(t=>{const row=document.createElement('div');row.className='summary-item';row.textContent=t.text;box.appendChild(row)})}
 function renderBrainSummary(){const b=computeBuckets();renderSummaryList('summaryToday','summaryTodayCount',b.today);renderSummaryList('summaryWeek','summaryWeekCount',b.week);renderSummaryList('summaryLater','summaryLaterCount',b.later)}
-function renderBrainIdeas(){const box=$('brainIdeas');box.innerHTML='';if(!ideas.length){const e=document.createElement('div');e.className='empty';e.textContent='Nothing captured yet';box.appendChild(e);return}ideas.forEach(idea=>{const el=document.createElement('article');el.className='idea';el.dataset.id=idea.id;const text=document.createElement('div');text.className='idea-text';text.textContent=idea.text;const clear=document.createElement('button');clear.className='delete idea-clear';clear.textContent='×';clear.title='Clear';clear.setAttribute('aria-label','Clear idea');clear.onclick=()=>{ideas=ideas.filter(x=>x.id!==idea.id);saveIdeas();renderBrainIdeas()};el.append(text,clear);attachDrag(el,()=>idea.id,(id,bucket)=>promoteIdea(id,bucket),'.summary-col','.idea-clear');box.appendChild(el)})}
+function renderBrainIdeas(){const box=$('brainIdeas');box.innerHTML='';if(!ideas.length){const e=document.createElement('div');e.className='empty';e.textContent='Nothing captured yet';box.appendChild(e);return}ideas.forEach(idea=>{const el=document.createElement('article');el.className='idea';el.dataset.id=idea.id;const text=document.createElement('div');text.className='idea-text';text.textContent=idea.text;const clear=document.createElement('button');clear.className='delete idea-clear';clear.textContent='×';clear.title='Clear';clear.setAttribute('aria-label','Clear idea');clear.onclick=()=>{ideas=ideas.filter(x=>x.id!==idea.id);saveIdeas();renderBrainIdeas()};el.append(text,clear);attachDrag(el,()=>idea.id,(id,bucket,before,target)=>{if(target.id==='brainIdeas'){moveItem(ideas,id,before,ideas.map(item=>item.id));saveIdeas();renderBrainIdeas();toast('Order updated')}else promoteIdea(id,bucket)},'.summary-col,#brainIdeas','.idea-clear');box.appendChild(el)})}
 function promoteIdea(ideaId,category){const idea=ideas.find(i=>i.id===ideaId);if(!idea)return;tasks.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),text:idea.text,date:null,category,completed:false,bucketed:false,completedAt:null,assignedAt:Date.now()});ideas=ideas.filter(i=>i.id!==ideaId);save();saveIdeas();render();toast('Idea moved to '+(category==='today'?'Today':category==='week'?'This week':'Later'))}
 function renderBrain(){renderBrainSummary();renderBrainIdeas()}
 function addIdeas(){const area=$('brainArea');const lines=area.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!lines.length)return;lines.forEach(text=>ideas.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),text}));saveIdeas();area.value='';renderBrainIdeas();toast(lines.length+' idea'+(lines.length===1?'':'s')+' added')}
@@ -108,7 +118,22 @@ function showView(view){currentView=view;document.querySelectorAll('.nav-btn[dat
 function render(){const b=computeBuckets();renderGroup('todayTasks',b.today,'todayCount','board','A clear day ahead.');renderGroup('weekTasks',b.week,'weekCount','board','Plenty of room this week.');renderGroup('laterTasks',b.later,'laterCount','board','Nothing waiting in the wings yet.');updateCounts(b);showView(currentView)}
 function addTask(){const input=$('taskInput');const text=input.value.trim();if(!text)return;tasks.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),text,date:null,category:selectedDeadline,completed:false,bucketed:false,completedAt:null,assignedAt:Date.now()});save();input.value='';render();toast('Task added')}
 function setDeadlineButtons(){document.querySelectorAll('.quick-btn').forEach(b=>b.classList.toggle('selected',b.dataset.deadline===selectedDeadline))}
-function dropTo(group,id){const t=tasks.find(x=>x.id===id);if(!t)return;t.completed=false;t.bucketed=false;t.completedAt=null;t.category=group;t.assignedAt=Date.now();save();render();toast('Task moved')}
+function moveItem(list,id,beforeId,visibleIds){
+ const index=list.findIndex(item=>item.id===id);if(index<0 || beforeId===id)return;
+ const [item]=list.splice(index,1);
+ let insert=beforeId ? list.findIndex(other=>other.id===beforeId) : -1;
+ if(insert<0){const peers=new Set(visibleIds);for(let i=0;i<list.length;i++)if(peers.has(list[i].id))insert=i+1;if(insert<0)insert=list.length}
+ list.splice(insert,0,item);
+}
+function dropTo(group,id,beforeId,target){
+ const t=tasks.find(x=>x.id===id);if(!t)return;
+ const completed=target?.id==='secondaryItems',bucketed=!!target?.closest('#bucketBoard');
+ const changed=t.category!==group && !completed || t.completed!==completed || t.bucketed!==bucketed;
+ if(!completed && t.category!==group){t.category=group;t.assignedAt=Date.now()}
+ t.completed=completed;t.bucketed=bucketed;if(!completed)t.completedAt=null;
+ const peers=tasks.filter(item=>completed?item.completed:!item.completed && item.bucketed===bucketed && item.category===group).map(item=>item.id);
+ moveItem(tasks,id,beforeId,peers);save();render();toast(changed?'Task moved':'Order updated');
+}
 function clearAllCompleted(){const count=tasks.filter(t=>t.completed).length;if(!count)return;if(!confirm('Clear all '+count+' completed task'+(count===1?'':'s')+'? This cannot be undone.'))return;tasks=tasks.filter(t=>!t.completed);save();render();toast('Completed cleared')}
 function clearAllIdeas(){const count=ideas.length;if(!count)return;if(!confirm('Clear all '+count+' idea'+(count===1?'':'s')+' in Brain dump? This cannot be undone.'))return;ideas=[];saveIdeas();renderBrainIdeas();toast('Brain dump cleared')}
 function deleteAllBucketed(){const count=tasks.filter(t=>t.bucketed&&!t.completed).length;if(!count)return;if(!confirm('Delete all '+count+' task'+(count===1?'':'s')+' in Bucket? This cannot be undone.'))return;tasks=tasks.filter(t=>!(t.bucketed&&!t.completed));save();render();toast('Bucket cleared')}
@@ -118,7 +143,7 @@ let editTimer, currentConflicts=[], renderedRows={};
 function status(message) { $('syncStatus').textContent=message; }
 function showBoard() {
  // Avoid replacing a contenteditable node while the user is typing.
- if (document.querySelector('[contenteditable="true"]') || document.querySelector('.date-input')) {
+ if (document.querySelector('[contenteditable="true"]') || document.querySelector('.date-input') || document.querySelector('.drag-ghost')) {
    clearTimeout(editTimer); editTimer=setTimeout(showBoard,500); return;
  }
  renderedRows=store.visibleRows();

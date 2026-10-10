@@ -13,6 +13,7 @@ Follow [SUPABASE_SETUP.md](SUPABASE_SETUP.md) to configure Supabase and fill in 
 - **Move a task between Today / This week / Later**:
   - **Desktop**: click and drag a card into another column.
   - **Mobile**: press and hold a card briefly (about a third of a second) until it lifts, then drag it into another column. A quick tap without holding opens it for editing instead, and a normal swipe still scrolls the page.
+- **Reorder**: drag cards above or below another card to reorder tasks in a column, Completed, or Brain dump. On touch screens, hold briefly before dragging. The insertion line shows the destination; order syncs across devices.
 - **Brain dump**: capture loose ideas one per line, then drag (press-and-hold-drag on mobile) an idea onto the Today / This week / Later summary column to turn it into a task.
 
 ## Cloud sync

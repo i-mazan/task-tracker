@@ -41,10 +41,30 @@ const baseUrl=process.env.TASKFLOW_TEST_URL || 'http://127.0.0.1:8000/';
  await page.getByText('Remote task',{exact:true}).waitFor();
  await page.locator('#changePassword').click();await page.locator('#currentPassword').fill('correct');await page.locator('#newPassword').fill('newpassword');await page.locator('#confirmPassword').fill('different');await page.getByRole('button',{name:'Save password',exact:true}).click();await page.getByText('Passwords do not match.',{exact:true}).waitFor();await page.locator('#confirmPassword').fill('newpassword');await page.getByRole('button',{name:'Save password',exact:true}).click();
  assert.equal(await page.locator('#passwordDialog').isVisible(),false);
+ // Reorder while offline and verify the durable order after a reload.
+ await page.evaluate(()=>{window.fakeOnline=false});
+ await page.locator('#taskInput').fill('Third task');await page.locator('#addBtn').click();
+ async function moveBefore(source,target){
+   await source.scrollIntoViewIfNeeded();const a=await source.boundingBox();
+   await target.scrollIntoViewIfNeeded();const b=await target.boundingBox();
+   await page.mouse.move(a.x+25,a.y+a.height/2);await page.mouse.down();
+   await page.mouse.move(b.x+25,b.y+4,{steps:12});await page.mouse.up();
+ }
+ await moveBefore(page.locator('#laterTasks .task').filter({hasText:'Third task'}),page.locator('#laterTasks .task').filter({hasText:'Offline task'}));
+ assert.deepEqual(await page.locator('#laterTasks .task-text').allTextContents(),['Third task','Offline task','Remote task']);
+ await page.reload();await page.getByText('Third task',{exact:true}).waitFor();
+ assert.deepEqual(await page.locator('#laterTasks .task-text').allTextContents(),['Third task','Offline task','Remote task']);
+ await page.locator('[data-view="brain"]').click();await page.locator('#brainArea').fill('First idea\nSecond idea');await page.locator('#brainAddBtn').click();
+ await moveBefore(page.locator('.idea').filter({hasText:'Second idea'}),page.locator('.idea').filter({hasText:'First idea'}));
+ assert.deepEqual(await page.locator('.idea-text').allTextContents(),['Second idea','First idea']);
+ await page.locator('[data-view="all"]').click();
+ await page.evaluate(()=>{window.fakeOnline=true;window.dispatchEvent(new Event('online'))});
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('taskflow.account.v1.user-a')).queue.length===0);
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('taskflow.account.v1.user-a')).cleanup.length===0);
  await page.screenshot({path:'/tmp/taskflow-desktop.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'/tmp/taskflow-mobile.png',fullPage:true});
  const second=await context.newPage();await second.goto(baseUrl);await second.getByText('TaskFlow is already open in another tab.',{exact:false}).waitFor();await second.close();
  await page.locator('#logout').click();await page.locator('#authScreen').waitFor();assert.equal(await page.evaluate(()=>localStorage.getItem('taskflow.account.v1.user-a')),null);
- assert.deepEqual(errors,[]);console.log('PASS: configuration, login errors, offline reload, queue delivery, live updates, password validation, tab lock, logout');
+ assert.deepEqual(errors,[]);console.log('PASS: configuration, login errors, offline reload, queue delivery, live updates, password validation, tab lock, offline task/idea reordering, logout');
  await browser.close();
 })().catch(error=>{console.error(error);process.exit(1)});
