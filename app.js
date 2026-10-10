@@ -1,9 +1,6 @@
 
 (async function(){
 'use strict';
-const STORAGE_KEY='taskflow.tasks.v3';
-const LEGACY_KEYS=['taskflow.tasks.v2','taskflow.tasks','tasks','taskFlowTasks'];
-const IDEAS_KEY='taskflow.ideas.v1';
 let tasks=[]; let ideas=[]; let currentView='all'; let selectedDeadline='later';
 const $=id=>document.getElementById(id);
 function pad(n){return String(n).padStart(2,'0')}
@@ -13,16 +10,7 @@ function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
 function weekEnd(d){const x=startDay(d); const day=x.getDay(); const days=day===0?6:7-day; return addDays(x,days)}
 function parseDate(s){if(!s)return null; const p=s.split('-').map(Number); if(p.length!==3||p.some(Number.isNaN))return null; return new Date(p[0],p[1]-1,p[2])}
 function save(){persistBoard()}
-function normalize(raw){if(!Array.isArray(raw))return []; return raw.map((t,i)=>{const date=t.date||t.deadline||null;return{id:String(t.id||Date.now()+'-'+i+'-'+Math.random().toString(36).slice(2)),text:String(t.text??t.title??t.name??'').trim(),date,category:['today','week','later'].includes(t.category)?t.category:(date?dateBucketOf({date}):'later'),completed:!!t.completed,bucketed:!!t.bucketed,completedAt:t.completedAt||null,assignedAt:t.assignedAt||Date.now()}}).filter(t=>t.text)}
-function load(){
-  let raw=null;
-  try{raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch(e){}
-  if(!raw){for(const key of LEGACY_KEYS){try{const candidate=JSON.parse(localStorage.getItem(key)||'null');if(Array.isArray(candidate)){raw=candidate;break}}catch(e){}}}
-  tasks=normalize(raw);
-}
 function saveIdeas(){persistBoard()}
-function normalizeIdeas(raw){if(!Array.isArray(raw))return []; return raw.map((i,idx)=>({id:String(i.id||Date.now()+'-'+idx+'-'+Math.random().toString(36).slice(2)),text:String(i.text??'').trim()})).filter(i=>i.text)}
-function loadIdeas(){let raw=null;try{raw=JSON.parse(localStorage.getItem(IDEAS_KEY)||'null')}catch(e){} ideas=normalizeIdeas(raw)}
 function dateBucketOf(t){
   if(!t.date)return 'later';
   const today=startDay(new Date()), due=parseDate(t.date); if(!due)return 'later';
@@ -125,29 +113,6 @@ function clearAllCompleted(){const count=tasks.filter(t=>t.completed).length;if(
 function clearAllIdeas(){const count=ideas.length;if(!count)return;if(!confirm('Clear all '+count+' idea'+(count===1?'':'s')+' in Brain dump? This cannot be undone.'))return;ideas=[];saveIdeas();renderBrainIdeas();toast('Brain dump cleared')}
 function deleteAllBucketed(){const count=tasks.filter(t=>t.bucketed&&!t.completed).length;if(!count)return;if(!confirm('Delete all '+count+' task'+(count===1?'':'s')+' in Bucket? This cannot be undone.'))return;tasks=tasks.filter(t=>!(t.bucketed&&!t.completed));save();render();toast('Bucket cleared')}
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove('show'),1500)}
-function storageWarning(){toast('Storage unavailable — changes may not be saved')}
-function exportBackup(){
- const data={tasks,ideas,exportedAt:new Date().toISOString()};
- const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
- const url=URL.createObjectURL(blob);
- const a=document.createElement('a');a.href=url;a.download='taskflow-backup-'+dateKey(new Date())+'.json';
- document.body.appendChild(a);a.click();a.remove();
- URL.revokeObjectURL(url);
- $('backupStatus').textContent='Backup downloaded.';toast('Backup downloaded')
-}
-function importBackupFile(file){
- const reader=new FileReader();
- reader.onload=()=>{
-  let data;try{data=JSON.parse(reader.result)}catch(e){$('backupStatus').textContent='That file is not a valid backup.';toast('Invalid backup file');return}
-  const incomingTasks=Array.isArray(data.tasks)?data.tasks:Array.isArray(data)?data:[];
-  const incomingIdeas=Array.isArray(data.ideas)?data.ideas:[];
-  if(!confirm('Import will replace all current tasks and Brain dump ideas. Continue?'))return;
-  tasks=normalize(incomingTasks);ideas=normalizeIdeas(incomingIdeas);
-  save();saveIdeas();render();
-  $('backupStatus').textContent='Backup imported.';toast('Backup imported')
- };
- reader.readAsText(file)
-}
 let client, store, account, channel, syncing=false, syncTimer, realtimeReady=false;
 let editTimer, currentConflicts=[], renderedRows={};
 function status(message) { $('syncStatus').textContent=message; }
@@ -234,7 +199,6 @@ async function activate(session) {
  catch(error) { $('app').hidden=true; $('authScreen').hidden=false; $('authStatus').textContent='Cannot open local storage: '+error.message; return; }
  $('accountEmail').textContent=next.email;
  showBoard(); connectionStatus();
- $('migrateLocal').hidden=store.state.migrated || !hasLegacyData();
  channel=client.channel('taskflow-'+next.id).on('postgres_changes',{
    event:'*',schema:'public',table:'taskflow_items',filter:'user_id=eq.'+next.id
  },event=>{
@@ -246,9 +210,6 @@ async function activate(session) {
    if(realtimeReady) synchronize(); else connectionStatus();
  });
  synchronize();
-}
-function hasLegacyData() {
- try { return [STORAGE_KEY,...LEGACY_KEYS,IDEAS_KEY].some(key=>JSON.parse(localStorage.getItem(key)||'[]')?.length); } catch { return false; }
 }
 function openPassword() {
  $('passwordForm').reset(); $('passwordStatus').textContent='';
@@ -315,18 +276,6 @@ for(const [id,keep] of [['keepLocal',true],['keepServer',false]]) $(id).onclick=
  try { store.resolve(currentConflicts,keep); $('conflictDialog').close(); showBoard(); synchronize(); }
  catch(error) { status('Could not save conflict resolution: '+error.message); }
 };
-$('migrateLocal').onclick=()=>{
- if(!store || !confirm('Add this browser’s old tasks and ideas to the signed-in account? Existing cloud data will be kept.')) return;
- const board=store.board(); load(); loadIdeas();
- for(const kind of ['tasks','ideas']) {
-   const incoming=kind==='tasks'?tasks:ideas;
-   const ids=new Set(board[kind].map(item=>item.id));
-   board[kind].push(...incoming.filter(item=>!ids.has(item.id)));
- }
- tasks=board.tasks; ideas=board.ideas;
- try { store.capture(board); store.state.migrated=true; store.persist(); $('migrateLocal').hidden=true; showBoard(); synchronize(); }
- catch(error) { showBoard(); toast('Import could not be saved: '+error.message); }
-};
 window.addEventListener('online',synchronize);
 window.addEventListener('offline',()=>{if(store) connectionStatus();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden) synchronize();});
@@ -339,8 +288,5 @@ $('brainArea').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e
 $('deleteAllBucketBtn').addEventListener('click',deleteAllBucketed);
 $('clearAllIdeasBtn').addEventListener('click',clearAllIdeas);
 $('clearAllCompletedBtn').addEventListener('click',clearAllCompleted);
-$('exportBackup').addEventListener('click',exportBackup);
-$('importBackup').addEventListener('click',()=>$('backupFile').click());
-$('backupFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(file)importBackupFile(file);e.target.value=''});
 await startCloud();
 })();
