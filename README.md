@@ -1,6 +1,8 @@
 # TaskFlow PWA
 
-A standalone, offline-friendly task board with browser-local storage and JSON backup/restore.
+A standalone, offline-friendly task board with Supabase accounts, per-user cloud sync, a durable local queue, and JSON backup/restore.
+
+Follow [SUPABASE_SETUP.md](SUPABASE_SETUP.md) to configure Supabase and fill in `supabase-config.js`. No build step or custom server is required.
 
 ## Using the board
 
@@ -17,4 +19,8 @@ A standalone, offline-friendly task board with browser-local storage and JSON ba
 
 The **Export** and **Import** buttons live at the bottom of the sidebar, under the navigation — always available, not tied to any single page. **Export** downloads tasks and Brain dump ideas as a JSON file. **Import** restores from that file and **replaces** existing tasks and ideas after a confirmation prompt. Download a backup first if you need to keep the current data.
 
-The browser stores data locally via `localStorage`; no account, cloud sync or automatic external backup is provided. Clearing site data or switching devices can lose data unless you exported a backup.
+After signing in, changes are saved to an account-specific localStorage cache and queue, then synchronized with Supabase. Live changes from other devices arrive through Supabase Realtime. Conflicts require a version choice; pending local changes are never silently replaced.
+
+Offline use requires a previous online visit and login. Keep the app open to synchronize. Only one tab per browser profile is active at a time. Clearing site data can lose unsynced changes; use Export for backups.
+
+Run synchronization logic tests with `node tests/sync-store.test.cjs`.
