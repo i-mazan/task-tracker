@@ -1,0 +1,198 @@
+/* Sidebar Toggle Feature - Optimized & Accessible */
+:root {
+  --sidebar-width: 250px;
+  --sidebar-transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sidebar Header Layout */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 2px 12px 30px;
+  gap: 12px;
+}
+
+.sidebar-header .brand {
+  margin: 0;
+  flex: 1;
+  text-align: right;
+}
+
+/* Toggle Button - Opens sidebar when collapsed */
+.sidebar-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1001;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  transition: opacity 200ms ease;
+  opacity: 1;
+}
+
+/* Hide open button when sidebar is open */
+body.sidebar-open .sidebar-toggle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-toggle:hover {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+
+.sidebar-toggle:active {
+  transform: scale(0.95);
+}
+
+.sidebar-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* Close Button - Inside sidebar, aligned right */
+.sidebar-close-btn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 200ms ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover {
+  background: var(--green);
+  color: #fff;
+}
+
+.sidebar-close-btn:active {
+  transform: scale(0.95);
+}
+
+.sidebar-close-btn:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* Enhanced Sidebar - Extends existing inline styles */
+.sidebar {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  contain: layout style paint;
+  z-index: 1000;
+  background: rgba(255, 253, 249, 0.95);
+  backdrop-filter: blur(8px);
+}
+
+/* Consistent icon sizing in navigation */
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Shared size for the circle and clock icons */
+.nav-btn[data-view="today"] .nav-icon,
+.nav-btn[data-view="week"] .nav-icon {
+  font-size: 15px;
+}
+
+/* Larger size for specific smaller-looking icons */
+.nav-btn[data-view="later"] .nav-icon,
+.nav-btn[data-view="bucket"] .nav-icon {
+  font-size: 19px;
+}
+
+.sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+/* Main Content - Responsive to Sidebar State */
+.main {
+  transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar:not(.collapsed) ~ .main {
+  margin-left: 250px;
+}
+
+.sidebar.collapsed ~ .main {
+  margin-left: 0;
+  width: 100%;
+}
+
+/* Medium screens optimization */
+@media (max-width: 900px) {
+  :root {
+    --sidebar-width: 205px;
+  }
+
+  .sidebar:not(.collapsed) {
+    width: 205px;
+  }
+
+  .sidebar:not(.collapsed) ~ .main {
+    margin-left: 205px;
+    width: calc(100% - 205px);
+  }
+}
+
+/* Mobile - Toggle hidden, sidebar always visible */
+@media (max-width: 650px) {
+  .sidebar-toggle {
+    display: none !important;
+  }
+
+  .sidebar-close-btn {
+    display: none !important;
+  }
+
+  .sidebar-header {
+    margin-bottom: 14px;
+  }
+
+  .sidebar {
+    transform: none !important;
+    transition: none;
+    backdrop-filter: none;
+    padding: 15px;
+  }
+
+  .sidebar.collapsed {
+    transform: none !important;
+  }
+
+  .main {
+    transition: none;
+  }
+
+  .sidebar ~ .main,
+  .sidebar.collapsed ~ .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 25px 16px;
+  }
+}

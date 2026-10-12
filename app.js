@@ -318,5 +318,104 @@ $('brainArea').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e
 $('deleteAllBucketBtn').addEventListener('click',deleteAllBucketed);
 $('clearAllIdeasBtn').addEventListener('click',clearAllIdeas);
 $('clearAllCompletedBtn').addEventListener('click',clearAllCompleted);
+
+// Sidebar toggle functionality - Optimized & Accessible
+(function initSidebarToggle() {
+  const STORAGE_KEY = 'taskflow-sidebar-collapsed';
+  const MOBILE_BREAKPOINT = 650;
+  const toggleOpen = $('sidebarToggle');
+  const toggleClose = $('sidebarCloseBtn');
+  const sidebar = $('sidebar');
+
+  if (!toggleOpen || !toggleClose || !sidebar) return;
+
+  // Check if we're on mobile
+  function isMobile() {
+    return window.innerWidth <= MOBILE_BREAKPOINT;
+  }
+
+  // Get saved state from localStorage with error handling
+  function getSavedState() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      // Default to collapsed (as per requirements)
+      return saved === null ? true : saved === 'true';
+    } catch (error) {
+      return true; // Default collapsed
+    }
+  }
+
+  // Save state to localStorage with error handling
+  function saveState(isCollapsed) {
+    try {
+      localStorage.setItem(STORAGE_KEY, String(isCollapsed));
+    } catch (error) {
+      // Silent fail - not critical
+    }
+  }
+
+  // Toggle sidebar collapsed state
+  function toggleSidebar(forceState) {
+    if (isMobile()) return; // Don't toggle on mobile
+
+    const isCollapsed = forceState !== undefined ? forceState : !sidebar.classList.contains('collapsed');
+
+    sidebar.classList.toggle('collapsed', isCollapsed);
+    document.body.classList.toggle('sidebar-open', !isCollapsed);
+
+    // Update both buttons
+    toggleOpen.setAttribute('aria-expanded', String(!isCollapsed));
+    toggleOpen.setAttribute('aria-label', isCollapsed ? 'Open sidebar' : 'Close sidebar');
+    toggleOpen.title = isCollapsed ? 'Open sidebar (Ctrl+B)' : 'Close sidebar (Ctrl+B)';
+    toggleClose.setAttribute('aria-label', 'Close sidebar');
+    toggleClose.title = 'Close sidebar (Ctrl+B)';
+
+    saveState(isCollapsed);
+  }
+
+  // Initialize sidebar state on page load
+  function initState() {
+    if (isMobile()) {
+      toggleOpen.style.display = 'none';
+      sidebar.classList.remove('collapsed');
+      document.body.classList.remove('sidebar-open');
+      return;
+    }
+
+    toggleOpen.style.display = '';
+    const savedCollapsed = getSavedState();
+    toggleSidebar(savedCollapsed);
+  }
+
+  // Handle toggle button clicks
+  toggleOpen.addEventListener('click', () => toggleSidebar(false));
+  toggleClose.addEventListener('click', () => toggleSidebar(true));
+
+  // Handle keyboard shortcut (Ctrl/Cmd + B)
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b' && !e.shiftKey && !e.altKey) {
+      const activeEl = document.activeElement;
+      const isEditing = activeEl?.isContentEditable || 
+                       activeEl?.tagName === 'INPUT' || 
+                       activeEl?.tagName === 'TEXTAREA';
+
+      if (!isEditing && !isMobile()) {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    }
+  });
+
+  // Handle resize events with debouncing for performance
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(initState, 150);
+  });
+
+  // Initialize on load
+  initState();
+})();
+
 await startCloud();
 })();
