@@ -137,7 +137,7 @@ function dropTo(group,id,beforeId,target){
 function clearAllCompleted(){const count=tasks.filter(t=>t.completed).length;if(!count)return;if(!confirm('Clear all '+count+' completed task'+(count===1?'':'s')+'? This cannot be undone.'))return;tasks=tasks.filter(t=>!t.completed);save();render();toast('Completed cleared')}
 function clearAllIdeas(){const count=ideas.length;if(!count)return;if(!confirm('Clear all '+count+' idea'+(count===1?'':'s')+' in Brain dump? This cannot be undone.'))return;ideas=[];saveIdeas();renderBrainIdeas();toast('Brain dump cleared')}
 function deleteAllBucketed(){const count=tasks.filter(t=>t.bucketed&&!t.completed).length;if(!count)return;if(!confirm('Delete all '+count+' task'+(count===1?'':'s')+' in Bucket? This cannot be undone.'))return;tasks=tasks.filter(t=>!(t.bucketed&&!t.completed));save();render();toast('Bucket cleared')}
-function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove('show'),1500)}
+function toast(msg){const el=$('toast');el.textContent='✨ '+msg;el.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>el.classList.remove('show'),1500)}
 let client, store, account, channel, syncing=false, syncTimer, realtimeReady=false;
 let editTimer, currentConflicts=[], renderedRows={};
 function status(message) { $('syncStatus').textContent=message; }
@@ -241,7 +241,12 @@ function openPassword() {
  if(!$('passwordDialog').open) $('passwordDialog').showModal();
 }
 async function startCloud() {
- if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(console.warn);
+ if('serviceWorker' in navigator) {
+   let refreshing=false;
+   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(refreshing)return;refreshing=true;window.location.reload()});
+   navigator.serviceWorker.addEventListener('message',event=>{if(event.data?.type==='SW_UPDATED'){status('Update available, reloading...');setTimeout(()=>window.location.reload(),800)}});
+   navigator.serviceWorker.register('./service-worker.js').catch(console.warn);
+ }
  const config=window.TASKFLOW_CONFIG;
  if(!config?.url || !config?.publishableKey) { $('authStatus').textContent='Supabase is not configured yet. See SUPABASE_SETUP.md.'; return; }
  if(!window.supabase) { $('authStatus').textContent='Supabase client could not load. Reload while online.'; return; }
