@@ -86,12 +86,12 @@ function attachDoubleTapEdit(el,text,excludeSelector,startEdit){
 }
 function makeTask(t,mode){
  const el=document.createElement('article'); el.className='task'; el.dataset.id=t.id;
- const main=document.createElement('div');main.className='task-main';const text=document.createElement('div');text.className='task-text';text.textContent=t.text;
+ const main=document.createElement('div');main.className='task-main';const text=document.createElement('div');text.className='task-text';text.innerHTML=t.text.replace(/\n/g,'<br>');
  function startEditing(){text.contentEditable='true';text.classList.add('editing');text.focus();const range=document.createRange();range.selectNodeContents(text);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}
  el.addEventListener('dblclick',e=>{if(e.target.closest('.task-actions')||e.target.closest('.task-date-btn'))return;e.stopPropagation();startEditing()});
  attachDoubleTapEdit(el,text,'.task-actions,.task-date-btn',startEditing);
- text.addEventListener('keydown',e=>{if(!text.isContentEditable)return;if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();text.blur()}else if(e.key==='Escape'){e.preventDefault();text.textContent=t.text;text.blur()}});
- text.addEventListener('blur',()=>{if(text.contentEditable!=='true')return;text.contentEditable='false';text.classList.remove('editing');const newText=text.textContent.trim();if(newText&&newText!==t.text){t.text=newText;save();render()}else{text.textContent=t.text}});
+ text.addEventListener('keydown',e=>{if(!text.isContentEditable)return;if(e.key==='Enter'){if(e.ctrlKey||e.metaKey){e.preventDefault();text.blur()}}else if(e.key==='Escape'){e.preventDefault();text.innerHTML=t.text.replace(/\n/g,'<br>');text.blur()}});
+ text.addEventListener('blur',()=>{if(text.contentEditable!=='true')return;text.contentEditable='false';text.classList.remove('editing');const newText=text.innerText.trim();if(newText&&newText!==t.text){t.text=newText;save();render()}else{text.innerHTML=t.text.replace(/\n/g,'<br>')}});
  const metaRow=document.createElement('div');metaRow.className='meta-row';
  const meta=document.createElement('div');meta.className='task-meta';const metaLabel=mode==='board'?dueLabel(t):mode==='completed'?completedLabel(t):'In Bucket';meta.textContent=metaLabel;if(mode==='board'&&(metaLabel==='OVERDUE'||metaLabel.indexOf('Overdue')===0))meta.classList.add('meta-overdue');
  metaRow.appendChild(meta);
