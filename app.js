@@ -3,6 +3,10 @@
 'use strict';
 let tasks=[]; let ideas=[]; let currentView='all'; let selectedDeadline='later';
 const $=id=>document.getElementById(id);
+function shouldSubmitOnEnter(event){
+ // Keep native newline behavior on touch-first devices and during IME composition.
+ return event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&event.keyCode!==229&&!window.matchMedia('(hover: none), (pointer: coarse)').matches;
+}
 function pad(n){return String(n).padStart(2,'0')}
 function dateKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
 function startDay(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
@@ -86,12 +90,12 @@ function attachDoubleTapEdit(el,text,excludeSelector,startEdit){
 }
 function makeTask(t,mode){
  const el=document.createElement('article'); el.className='task'; el.dataset.id=t.id;
- const main=document.createElement('div');main.className='task-main';const text=document.createElement('div');text.className='task-text';text.innerHTML=t.text.replace(/\n/g,'<br>');
+ const main=document.createElement('div');main.className='task-main';const text=document.createElement('div');text.className='task-text';text.textContent=t.text;
  function startEditing(){text.contentEditable='true';text.classList.add('editing');text.focus();const range=document.createRange();range.selectNodeContents(text);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}
  el.addEventListener('dblclick',e=>{if(e.target.closest('.task-actions')||e.target.closest('.task-date-btn'))return;e.stopPropagation();startEditing()});
  attachDoubleTapEdit(el,text,'.task-actions,.task-date-btn',startEditing);
- text.addEventListener('keydown',e=>{if(!text.isContentEditable)return;if(e.key==='Enter'){if(e.shiftKey)return;e.preventDefault();text.blur()}else if(e.key==='Escape'){e.preventDefault();text.innerHTML=t.text.replace(/\n/g,'<br>');text.blur()}});
- text.addEventListener('blur',()=>{if(text.contentEditable!=='true')return;text.contentEditable='false';text.classList.remove('editing');const newText=text.innerText.trim();if(newText&&newText!==t.text){t.text=newText;save();render()}else{text.innerHTML=t.text.replace(/\n/g,'<br>')}});
+ text.addEventListener('keydown',e=>{if(!text.isContentEditable||e.isComposing||e.keyCode===229)return;if(shouldSubmitOnEnter(e)){e.preventDefault();text.blur()}else if(e.key==='Escape'){e.preventDefault();text.textContent=t.text;text.blur()}});
+ text.addEventListener('blur',()=>{if(text.contentEditable!=='true')return;text.contentEditable='false';text.classList.remove('editing');const newText=text.innerText.trim();if(newText&&newText!==t.text){t.text=newText;save();render()}else{text.textContent=t.text}});
  const metaRow=document.createElement('div');metaRow.className='meta-row';
  const meta=document.createElement('div');meta.className='task-meta';const metaLabel=mode==='board'?dueLabel(t):mode==='completed'?completedLabel(t):'In Bucket';meta.textContent=metaLabel;if(mode==='board'&&(metaLabel==='OVERDUE'||metaLabel.indexOf('Overdue')===0))meta.classList.add('meta-overdue');
  metaRow.appendChild(meta);
@@ -311,10 +315,10 @@ window.addEventListener('offline',()=>{if(store) connectionStatus();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden) synchronize();});
 
 $('sidebarNav').addEventListener('click',e=>{const b=e.target.closest('button[data-view]');if(b){e.preventDefault();showView(b.dataset.view)}});
-$('addBtn').addEventListener('click',addTask);$('taskInput').addEventListener('keydown',e=>{if(e.key==='Enter'){if(e.shiftKey)return;e.preventDefault();addTask()}});
+$('addBtn').addEventListener('click',addTask);$('taskInput').addEventListener('keydown',e=>{if(shouldSubmitOnEnter(e)){e.preventDefault();addTask()}});
 document.querySelectorAll('.quick-btn').forEach(b=>b.addEventListener('click',()=>{selectedDeadline=b.dataset.deadline;setDeadlineButtons()}));
 $('brainAddBtn').addEventListener('click',addIdeas);
-$('brainArea').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addIdeas()}});
+$('brainArea').addEventListener('keydown',e=>{if(shouldSubmitOnEnter(e)){e.preventDefault();addIdeas()}});
 $('deleteAllBucketBtn').addEventListener('click',deleteAllBucketed);
 $('clearAllIdeasBtn').addEventListener('click',clearAllIdeas);
 $('clearAllCompletedBtn').addEventListener('click',clearAllCompleted);
@@ -322,17 +326,13 @@ $('clearAllCompletedBtn').addEventListener('click',clearAllCompleted);
 // Sidebar toggle functionality - Optimized & Accessible
 (function initSidebarToggle() {
   const STORAGE_KEY = 'taskflow-sidebar-collapsed';
-  const MOBILE_BREAKPOINT = 650;
+
   const toggleOpen = $('sidebarToggle');
   const toggleClose = $('sidebarCloseBtn');
   const sidebar = $('sidebar');
 
   if (!toggleOpen || !toggleClose || !sidebar) return;
 
-  // Check if we're on mobile
-  function isMobile() {
-    return window.innerWidth <= MOBILE_BREAKPOINT;
-  }
 
   // Get saved state from localStorage with error handling
   function getSavedState() {
@@ -356,12 +356,17 @@ $('clearAllCompletedBtn').addEventListener('click',clearAllCompleted);
 
   // Toggle sidebar collapsed state
   function toggleSidebar(forceState) {
-    if (isMobile()) return; // Don't toggle on mobile
+
 
     const isCollapsed = forceState !== undefined ? forceState : !sidebar.classList.contains('collapsed');
 
+    const moveFocus = sidebar.contains(document.activeElement) ||
+      document.activeElement === toggleOpen;
     sidebar.classList.toggle('collapsed', isCollapsed);
+    sidebar.inert = isCollapsed;
     document.body.classList.toggle('sidebar-open', !isCollapsed);
+    toggleOpen.hidden = !isCollapsed;
+    if (moveFocus) (isCollapsed ? toggleOpen : toggleClose).focus();
 
     // Update both buttons
     toggleOpen.setAttribute('aria-expanded', String(!isCollapsed));
@@ -373,18 +378,8 @@ $('clearAllCompletedBtn').addEventListener('click',clearAllCompleted);
     saveState(isCollapsed);
   }
 
-  // Initialize sidebar state on page load
   function initState() {
-    if (isMobile()) {
-      toggleOpen.style.display = 'none';
-      sidebar.classList.remove('collapsed');
-      document.body.classList.remove('sidebar-open');
-      return;
-    }
-
-    toggleOpen.style.display = '';
-    const savedCollapsed = getSavedState();
-    toggleSidebar(savedCollapsed);
+    toggleSidebar(getSavedState());
   }
 
   // Handle toggle button clicks
@@ -399,18 +394,18 @@ $('clearAllCompletedBtn').addEventListener('click',clearAllCompleted);
                        activeEl?.tagName === 'INPUT' || 
                        activeEl?.tagName === 'TEXTAREA';
 
-      if (!isEditing && !isMobile()) {
+      if (!isEditing && !$('app').hidden) {
         e.preventDefault();
         toggleSidebar();
       }
     }
   });
 
-  // Handle resize events with debouncing for performance
-  let resizeTimeout;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(initState, 150);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !sidebar.classList.contains('collapsed') &&
+        !$('app').hidden && !document.querySelector('dialog[open]')) {
+      toggleSidebar(true);
+    }
   });
 
   // Initialize on load
